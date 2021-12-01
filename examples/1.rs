@@ -1,7 +1,7 @@
-use aoc2021::get_input;
+use aoc2021::{get_input, Error};
 use std::io::{BufRead, BufReader};
 
-fn main() -> Result<(), ureq::Error> {
+fn main() -> Result<(), Error> {
     let input = BufReader::new(get_input(1)?);
     let depth = input
         .lines()
