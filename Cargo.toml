@@ -6,4 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-http_req = "0.8"
+ex = "0.1"
+http_req = {version="0.8",features=["rust-tls"],default-features=false}
