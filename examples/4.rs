@@ -41,21 +41,13 @@ impl Board {
         None
     }
     fn is_finished(&self) -> bool {
-        for l in &self.lines {
-            if l.is_empty() {
-                return true;
-            }
-        }
-        false
+        self.lines.iter().any(|l| l.is_empty())
     }
 }
 
 fn find_next_win(numbers: impl Iterator<Item = u32>, boards: &mut Vec<Board>) -> Option<u32> {
-    let mut res = None;
     for p in numbers {
-        for b in boards.iter_mut() {
-            res = res.or(b.mark(p));
-        }
+        let res = boards.iter_mut().filter_map(|b| b.mark(p)).last();
         if res.is_some() {
             return res;
         }
