@@ -1,14 +1,10 @@
 use aoc2021::{get_input, Error};
 use std::io::{BufRead, BufReader};
 
-fn advance(state: &[u64]) -> [u64; 9] {
-    let mut res = [0u64; 9];
-    for i in 1..res.len() {
-        res[i - 1] = state[i];
-    }
-    res[6] += state[0];
-    res[8] = state[0];
-    res
+fn advance(state: &mut [u64], spawn_index: &mut usize) {
+    let cycle_index = (*spawn_index + 7) % 9;
+    state[cycle_index] += state[*spawn_index];
+    *spawn_index = (*spawn_index + 1) % 9;
 }
 fn main() -> Result<(), Error> {
     let input = BufReader::new(get_input(6)?);
@@ -21,12 +17,13 @@ fn main() -> Result<(), Error> {
     }) {
         state[v] += 1;
     }
+    let mut spawn_index = 0usize;
     for _ in 0..80 {
-        state = advance(&state);
+        advance(&mut state, &mut spawn_index);
     }
     let answer1: u64 = state.iter().sum();
     for _ in 0..(256 - 80) {
-        state = advance(&state);
+        advance(&mut state, &mut spawn_index);
     }
     let answer2: u64 = state.iter().sum();
     println!("Answer 1: {}", answer1);
