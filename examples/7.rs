@@ -1,4 +1,4 @@
-use aoc2021::{get_input, Error};
+use aoc2021::{get_input, intcode, Error};
 use std::io::{BufRead, BufReader};
 
 fn int_sum(n: i32) -> i32 {
@@ -16,6 +16,17 @@ fn main() -> Result<(), Error> {
                 .unwrap()
         })
         .collect();
+    let mut m = intcode::Machine::from_iter(data.iter().map(|x| *x as intcode::Int));
+    let easter_egg = m.run(None).unwrap();
+    println!(
+        "Easter egg: {}",
+        String::from_iter(
+            easter_egg
+                .1
+                .iter()
+                .map(|x| char::from_u32(*x as u32).unwrap())
+        )
+    );
 
     let min = *data.iter().min().unwrap();
     let max = *data.iter().max().unwrap();
