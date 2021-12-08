@@ -80,7 +80,6 @@ pub struct Machine {
     mem: Vec<Int>,
     ip: usize,
     rel_base: Int,
-    running: bool,
 }
 
 impl std::iter::FromIterator<Int> for Machine {
@@ -92,19 +91,17 @@ impl std::iter::FromIterator<Int> for Machine {
 impl Machine {
     pub fn from_file(file: std::fs::File) -> Self {
         let reader = std::io::BufReader::new(file);
-        let mem = reader
+        reader
             .split(b',')
             .filter_map(|x| x.ok())
             .filter_map(|x| String::from_utf8_lossy(&x).trim().parse().ok())
-            .collect();
-        Self::from_vec(mem)
+            .collect()
     }
     pub fn from_vec(mem: Vec<Int>) -> Self {
         Self {
             mem,
             ip: 0,
             rel_base: 0,
-            running: false,
         }
     }
     pub fn set_mem(&mut self, addr: usize, value: Int) {
