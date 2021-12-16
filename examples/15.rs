@@ -1,36 +1,10 @@
 use aoc2021::{get_input, Error};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     io::{BufRead, BufReader},
 };
 
 type Coord = (i32, i32);
-
-fn display_cost(cost: &HashMap<Coord, u32>) {
-    let size = cost.keys().max_by_key(|(x, y)| x + y).unwrap().clone();
-    for y in 0..=size.1 {
-        for x in 0..=size.0 {
-            let c = (cost[&(x, y)] + '0' as u32) as u8 as char;
-            print!("{}", c);
-        }
-        println!("");
-    }
-}
-fn display_path(cost: &HashMap<Coord, u32>, path: &Vec<Coord>) {
-    let size = cost.keys().max_by_key(|(x, y)| x + y).unwrap().clone();
-    let path = path.iter().collect::<HashSet<_>>();
-    for y in 0..=size.1 {
-        for x in 0..=size.0 {
-            let c = if path.contains(&&(x, y)) {
-                (cost[&(x, y)] + '0' as u32) as u8 as char
-            } else {
-                ' '
-            };
-            print!("{}", c);
-        }
-        println!("");
-    }
-}
 
 fn add_tile(pos: Coord, cost: &HashMap<Coord, u32>, whole_cost: &mut HashMap<Coord, u32>) {
     let size = cost.keys().max_by_key(|(x, y)| x + y).unwrap().clone();
