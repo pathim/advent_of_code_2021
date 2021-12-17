@@ -1,5 +1,8 @@
 use aoc2021::{get_input, Error};
-use std::io::{BufRead, BufReader};
+use std::{
+    collections::{HashMap, HashSet},
+    io::{BufRead, BufReader},
+};
 
 type Coord = (i32, i32);
 fn parse_arg(a: &str) -> Coord {
@@ -8,69 +11,70 @@ fn parse_arg(a: &str) -> Coord {
     (min.parse().unwrap(), max.parse().unwrap())
 }
 
-#[derive(Debug, Clone)]
-struct Projectile {
-    vel: Coord,
-    path: Vec<Coord>,
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum Time {
+    Single(i32),
+    OpenEnd(i32),
 }
 
-impl Projectile {
-    fn new(vel: Coord) -> Self {
-        let path = vec![(0, 0)];
-        Self { vel, path }
-    }
-
-    fn step(&mut self) -> Coord {
-        let mut pos = self.pos();
-        pos.0 += self.vel.0;
-        pos.1 += self.vel.1;
-        self.vel.0 -= self.vel.0.signum();
-        self.vel.1 -= 1;
-        self.path.push(pos);
-        pos
-    }
-
-    fn run_to_end(&mut self, limits: Coord) {
-        loop {
-            let pos = self.step();
-            if pos.0 >= limits.0 || pos.1 <= limits.1 {
-                break;
-            }
+impl Time {
+    fn contains(&self, other: &Self) -> bool {
+        let oi = match other {
+            &Time::Single(v) => v,
+            &Time::OpenEnd(v) => v,
+        };
+        match self {
+            &Time::Single(v) => v == oi,
+            &Time::OpenEnd(v) => v <= oi,
         }
     }
-    fn pos(&self) -> Coord {
-        *self.path.last().unwrap()
-    }
+}
 
-    fn max_height(&self) -> i32 {
-        self.path.iter().map(|x| x.1).max().unwrap()
+fn count_times(x: i32) -> HashMap<Time, i32> {
+    let mut res = HashMap::new();
+    for n in 1.. {
+        let num = 2 * x + n * n - n;
+        let den = 2 * n;
+        let v = num / den;
+        let r = num % den;
+        if r == 0 {
+            let t = if x > 0 && n >= v {
+                Time::OpenEnd(n)
+            } else {
+                Time::Single(n)
+            };
+            res.insert(t, v);
+        }
+        if if x > 0 { n >= v } else { v > -x } {
+            return res;
+        }
     }
+    unreachable!()
+}
 
-    fn check_hit(&self, target_x: Coord, target_y: Coord) -> bool {
-        self.check_hit_x(target_x) && self.check_hit_y(target_y)
+fn count_times_area(x: Coord, y: Coord) -> usize {
+    let mut x_map = Vec::new();
+    let mut y_map = Vec::new();
+    let mut res = HashSet::new();
+    for x in x.0..=x.1 {
+        x_map.push(count_times(x));
     }
-    fn check_hit_x(&self, target_x: Coord) -> bool {
-        let len = self.path.len();
-        for n in 1..=2 {
-            if let Some(p) = self.path.get(len - n) {
-                if p.0 >= target_x.0 && p.0 <= target_x.1 {
-                    return true;
+    for y in y.0..=y.1 {
+        y_map.push(count_times(y));
+    }
+    for x_res in &x_map {
+        for y_res in &y_map {
+            for (y_time, y_vel) in y_res {
+                for (x_time, x_vel) in x_res {
+                    if x_time.contains(y_time) {
+                        let vel = (x_vel, y_vel);
+                        res.insert(vel);
+                    }
                 }
             }
         }
-        false
     }
-    fn check_hit_y(&self, target_y: Coord) -> bool {
-        let len = self.path.len();
-        for n in 1..=2 {
-            if let Some(p) = self.path.get(len - n) {
-                if p.1 >= target_y.0 && p.1 <= target_y.1 {
-                    return true;
-                }
-            }
-        }
-        false
-    }
+    res.len()
 }
 
 fn main() -> Result<(), Error> {
@@ -82,15 +86,15 @@ fn main() -> Result<(), Error> {
         .next()
         .unwrap()
         .unwrap();
-    //let input="target area: x=20..30, y=-10..-5";
+
     let (_, args) = input.split_once(':').unwrap();
     let (x_arg, y_arg) = args.split_once(',').unwrap();
     let x = parse_arg(x_arg);
     let y = parse_arg(y_arg);
 
-    let vx0 = (((((x.0 + x.1) * 4 + 1) as f64).sqrt() - 1.0) / 2.0).floor() as i32;
     let vy0 = -y.0 - 1;
     println!("Answer 1: {}", (vy0 + 1) * vy0 / 2);
+    println!("Answer 2: {}", count_times_area(x, y));
 
     Ok(())
 }
