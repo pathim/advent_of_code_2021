@@ -73,26 +73,6 @@ impl Projectile {
     }
 }
 
-fn find_highest(target_x: Coord, target_y: Coord) -> Projectile {
-    // x-value of initial guess is calculated to be correct
-    let mut guess = (
-        (((((target_x.0 + target_x.1) * 4 + 1) as f64).sqrt() - 1.0) / 2.0).floor() as i32,
-        0,
-    );
-    let mut best_guess = Projectile::new(guess);
-    loop {
-        let mut p = Projectile::new(guess);
-        p.run_to_end((target_x.1, target_y.0));
-        guess.1 += 1;
-        if p.check_hit(target_x, target_y) {
-            best_guess = p;
-        } else {
-            if p.vel.1.abs() > 5 * (target_y.1 - target_y.0) {
-                return best_guess;
-            }
-        }
-    }
-}
 fn main() -> Result<(), Error> {
     /*
      * x(n)=(vx0+1)*vx0/2-((vx0-n)+1)*max(vx0-n,0)/2
@@ -108,9 +88,9 @@ fn main() -> Result<(), Error> {
     let x = parse_arg(x_arg);
     let y = parse_arg(y_arg);
 
-    let res = find_highest(x, y);
-    println!("Answer 1: {}", res.max_height());
-    println!(" {:?}", res.path);
+    let vx0 = (((((x.0 + x.1) * 4 + 1) as f64).sqrt() - 1.0) / 2.0).floor() as i32;
+    let vy0 = -y.0 - 1;
+    println!("Answer 1: {}", (vy0 + 1) * vy0 / 2);
 
     Ok(())
 }
