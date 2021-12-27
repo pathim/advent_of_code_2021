@@ -8,7 +8,7 @@ const COST_MAP: [usize; 4] = [1, 10, 100, 1000];
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct State {
-    holes: [[Option<usize>; 2]; 4],
+    holes: [[Option<usize>; 4]; 4],
     corridor: [Option<usize>; 7],
 }
 
@@ -27,45 +27,25 @@ impl State {
         let mut res = Vec::new();
         // find possible moves out of holes
         for (i, v) in self.holes.iter().enumerate() {
-            if v[0] == Some(i) && v[1] == Some(i) {
+            if v.iter().all(|x| *x == Some(i) || x.is_none()) {
                 // Hole correctly filled. ignore
                 continue;
             }
-            if let Some(upper) = v[0] {
+            if let Some((hp, hv)) = v.iter().enumerate().skip_while(|(_, v)| v.is_none()).next() {
+                assert!(hv.is_some());
                 for f in self.find_free_left(i + 2) {
                     let mut new_state = self.clone();
-                    new_state.holes[i][0] = None;
-                    new_state.corridor[f] = Some(upper);
-                    let cost = to_real_pos(i + 2) - to_real_pos(f);
-                    res.push((new_state, cost * COST_MAP[upper]));
+                    new_state.holes[i][hp] = None;
+                    new_state.corridor[f] = hv.clone();
+                    let cost = to_real_pos(i + 2) - to_real_pos(f) + hp;
+                    res.push((new_state, cost * COST_MAP[hv.unwrap()]));
                 }
                 for f in self.find_free_right(i + 2) {
                     let mut new_state = self.clone();
-                    new_state.holes[i][0] = None;
-                    new_state.corridor[f] = Some(upper);
-                    let cost = to_real_pos(f) - to_real_pos(i + 2) + 2;
-                    res.push((new_state, cost * COST_MAP[upper]));
-                }
-            } else {
-                if let Some(lower) = v[1] {
-                    if lower == i {
-                        // lower position is correct
-                        continue;
-                    }
-                    for f in self.find_free_left(i + 2) {
-                        let mut new_state = self.clone();
-                        new_state.holes[i][1] = None;
-                        new_state.corridor[f] = Some(lower);
-                        let cost = to_real_pos(i + 2) - to_real_pos(f) + 1;
-                        res.push((new_state, cost * COST_MAP[lower]));
-                    }
-                    for f in self.find_free_right(i + 2) {
-                        let mut new_state = self.clone();
-                        new_state.holes[i][1] = None;
-                        new_state.corridor[f] = Some(lower);
-                        let cost = to_real_pos(f) - to_real_pos(i + 2) + 2 + 1;
-                        res.push((new_state, cost * COST_MAP[lower]));
-                    }
+                    new_state.holes[i][hp] = None;
+                    new_state.corridor[f] = hv.clone();
+                    let cost = to_real_pos(f) - to_real_pos(i + 2) + 2 + hp;
+                    res.push((new_state, cost * COST_MAP[hv.unwrap()]));
                 }
             }
         }
@@ -74,17 +54,18 @@ impl State {
             if let Some(v) = v {
                 let hole_idx = *v;
                 let hv = self.holes[hole_idx];
-                if hv[0].is_some() {
+                if hv.iter().filter_map(|x| *x).any(|x| x != hole_idx) {
+                    //skip if there are wrong values in the hole
                     continue;
                 }
-                let hole_depth = if let Some(lower) = hv[1] {
-                    if lower != hole_idx {
-                        continue;
-                    }
-                    1
-                } else {
-                    2
-                };
+                let hole_depth = hv
+                    .iter()
+                    .enumerate()
+                    .skip_while(|(_, x)| x.is_none())
+                    .map(|(x, _)| x)
+                    .next()
+                    .unwrap_or(hv.len());
+                assert_ne!(hole_depth, 0);
                 if i < hole_idx + 2 {
                     if self.corridor[i + 1..hole_idx + 2]
                         .iter()
@@ -204,9 +185,24 @@ fn main() -> Result<(), Error> {
             start.holes[i][j] = Some(c as usize - 'A' as usize);
         }
     }
+    let mut start2 = start.clone();
+    for j in 2..=3 {
+        for (i, h) in start.holes.iter_mut().enumerate() {
+            h[j] = Some(i);
+        }
+    }
+    const MIDDLE: [[usize; 2]; 4] = [[3, 3], [2, 1], [1, 0], [0, 2]];
+    for (base, middle) in start2.holes.iter_mut().zip(MIDDLE.iter()) {
+        base[3] = base[1];
+        base[1] = Some(middle[0]);
+        base[2] = Some(middle[1]);
+    }
+    println!("{:?}", start2);
 
     let res1 = search(&start);
     println!("Answer 1: {}", res1);
+    let res2 = search(&start2);
+    println!("Answer 1: {}", res2);
 
     Ok(())
 }
